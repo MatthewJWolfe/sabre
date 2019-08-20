@@ -42,7 +42,7 @@ func main() {
 			fmt.Println("What would you like to encrypt?\n   1. File\n   2. Message")
 			fmt.Print("Select (1 / 2) # ")
 			selection, _, err := cli_reader.ReadLine()
-			util.Check(err)
+			util.CheckPanic(err)
 			if len(selection) > 0 {
 				switch selection[0]{
 				case byte('1'):
@@ -52,11 +52,13 @@ func main() {
 					fmt.Printf("> Filename: \"%s\"\n", filename)
 				//Open the specified file and create io reader object
 					plainfile, err := os.Open(string(filename))
-					util.Check(err)
+					if util.CheckWarn(err) {
+						break
+					}
 					plain_reader := bufio.NewReader(plainfile)
 				//Request key to encrypt the contents of plainfile
 					key, err := util.AskForKey(cli_reader)
-					util.Check(err)
+					util.CheckPanic(err)
 				//Save the key, generate the IV, create PRGA and preform KSA.
 					ron.Init(key)
 				//Use the Encode function of the RC4 struct to generate cyphertext
@@ -87,7 +89,7 @@ func main() {
 			fmt.Println("What would you like to decrypt?\n   1. File\n   2. Message")
 			fmt.Print("Select (1 / 2) # ")
 			selection, _, err := cli_reader.ReadLine()
-			util.Check(err)
+			util.CheckPanic(err)
 			if len(selection) > 0 {
 				switch selection[0]{
 				case byte('1'):
@@ -98,15 +100,18 @@ func main() {
 					filename, _, _ := cli_reader.ReadLine()
 					fmt.Printf("> Filename: \"%s\"\n", filename)
 					cryptfile, err := os.Open(string(filename))
-					util.Check(err)
+					if util.CheckWarn(err) {
+						break
+					}
 				//reader object pointing to the cyphertext file
 					cypher_reader := bufio.NewReader(cryptfile)
 					key, err := util.AskForKey(cli_reader)
-					util.Check(err)
+					util.CheckPanic(err)
 				//iv is removed from file and saved
 					iv := util.IVfile(cypher_reader)
 				//RC4 object is instantiated with key from user and IV from file
 				//KSA is preformed
+					fmt.Println(iv)
 					ron.Init(key, iv)
 				//Cyphertext is decoded and stored and a slice is returned
 					plain_data := ron.Decode(cypher_reader)
@@ -114,7 +119,7 @@ func main() {
 					fmt.Println("> Save decrypted data to file? (Y/N)")
 					fmt.Print("Select (Y / N) # ")
 					save, _, err := cli_reader.ReadLine()
-					util.Check(err)
+					util.CheckPanic(err)
 					if save[0] == byte('y') || save[0] == byte('Y') {
 						fmt.Print("Name of decoded file: ")
 						filename, _, _ := cli_reader.ReadLine()

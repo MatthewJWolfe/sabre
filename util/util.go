@@ -11,15 +11,26 @@ import (
 	)
 
 
-func Check(e error) {
+func CheckPanic(e error) {
     if e != nil {
         panic(e)
     }
 }
+//If e is not null will print error and return false
+func CheckWarn(e error) (bool){
+	if e != nil {
+		fmt.Print("\033[0;31;40mERR > ")
+		fmt.Println(e)
+		fmt.Print("\033[0;37;40m")
+		return true
+	} else {
+		return false
+	}
+}
 func IVfile(r *bufio.Reader) ([]byte) {
 	b1 := make([]byte, 10)
-	_, err := r.Read(b1)
-	Check(err)
+	_, err := io.ReadFull(r, b1)
+	CheckPanic(err)
 	return b1
 }
 func AskForKey(r *bufio.Reader ) ([]byte, error){
@@ -67,7 +78,7 @@ func Menu(r *bufio.Reader) (rune){
 	fmt.Print("Select an above option (1-4) ")
 
 	selection, _,err := r.ReadLine()
-	Check(err)
+	CheckPanic(err)
 	if rune(selection[0]) == 'e' || rune(selection[0]) == 'E' ||  selection[0] == 0x31 {
 		return 'e'
 	}

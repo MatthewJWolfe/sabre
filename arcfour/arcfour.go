@@ -2,8 +2,9 @@ package arcfour
 
 import (
     "bufio"
+    "encoding/hex"
     "github.com/MatthewJWolfe/sabre/util"
-    //"fmt"
+    "fmt"
   )
 	//ARC is the stucture that holds the vital components for a valid RC4 implementation
 	//Including a pointer to a PRGA (Psuedo Random Generation Algorithm)
@@ -41,29 +42,47 @@ import (
 		  plain_byte, e_byte, k_byte byte
 			enc_slice []byte
 		)
-		for err == nil {
+		for {
 			plain_byte, err = p_stream.ReadByte()
-			k_byte = a.Rgen.Kstream()
-			e_byte = plain_byte ^ k_byte
-			enc_slice = append(enc_slice, e_byte)
+      if err == nil{
+        k_byte = a.Rgen.Kstream()
+  			e_byte = plain_byte ^ k_byte
+  			enc_slice = append(enc_slice, e_byte)
+      } else {
+        break
+      }
 		}
-		return enc_slice[:len(enc_slice) - 1]
+    hex_encoded := make([]byte, hex.EncodedLen(len(enc_slice)))
+    hex.Encode(hex_encoded, enc_slice)
+    fmt.Printf("%s", hex_encoded)
+		return hex_encoded
 	}
 	func (a *ARC) Decode(p_stream *bufio.Reader) ([]byte){
 		var (
 			err error
 			plain_byte, d_byte, k_byte byte
-			dec_slice []byte
+			temp_slice []byte
 		)
-		for err == nil {
+		for {
 			plain_byte, err = p_stream.ReadByte()
-			k_byte = a.Rgen.Kstream()
-			d_byte = plain_byte ^ k_byte
-			//fmt.Printf("plain: %x, key: %x, cypher: %x\n", plain_byte, k_byte, e_byte)
-			//fmt.Printf("%x", e_byte)
-			dec_slice = append(dec_slice, d_byte)
+      if err == nil {
+        temp_slice = append(temp_slice, plain_byte)
+      } else {
+        break
+      }
 		}
-		return dec_slice[:len(dec_slice) - 1]
+    hex_decoded := make([]byte, hex.DecodedLen(len(temp_slice)))
+    _, err = hex.Decode(hex_decoded, temp_slice[:len(temp_slice)])
+    temp_slice = nil
+    for _, c_byte := range hex_decoded {
+      k_byte = a.Rgen.Kstream()
+			d_byte =  c_byte ^ k_byte
+      temp_slice = append(temp_slice, d_byte)
+    }
+    if err != nil {
+		    fmt.Println(err)
+	  }
+		return temp_slice
 	}
   func (a *ARC) WriteEncFile(cyphertext []byte, name string) (error) {
     //creates file with name provided by arg2, file is always in a safe empty state
